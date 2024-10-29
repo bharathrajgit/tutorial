@@ -1,0 +1,22 @@
+const express = require('express')
+const {open} = require('sqlite')
+const sqlite3 = require('sqlite3')
+const path = require('path')
+
+const app = express()
+
+const dbPath = path.join(__dirname, 'goodreads.db')
+
+let db = null
+
+const initializeDBAndServer = async () => {
+  db = await open({
+    filename: dbPath,
+    driver: sqlite3.DataBase,
+  })
+}
+
+initializeDBAndServer()
+
+app.listen(3000)
+
