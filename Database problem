@@ -20,3 +20,4 @@ initializeDBAndServer()
 
 app.listen(3000)
 
+I try to connecting sqlite database but i get an error like (SQLITE: (driver not defined)). I am also used commands like (npm install sqlite --save, npm install sqlite3 --save)But It is not working.
