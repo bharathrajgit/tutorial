@@ -1,0 +1,135 @@
+const express = require('express')
+const {open} = require('sqlite')
+const sqlite3 = require('sqlite3')
+const path = require('path')
+
+const app = express()
+app.use(express.json())
+const dbPath = path.join(__dirname, 'moviesData.db')
+
+let db = null
+
+const initializeDbAndServer = async () => {
+  try {
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database,
+    })
+    app.listen(3000, () => {
+      console.log('Server Running At http://localhost:3000/')
+    })
+  } catch (error) {
+    console.log(`Error ${error.message}`)
+  }
+}
+
+initializeDbAndServer()
+
+//GET All Movie Table List API (API 1)
+app.get('/movies/', async (request, response) => {
+  const allMoviesListQuery = `
+    SELECT 
+    movie_name
+    FROM 
+    movie`
+  const allMoviesList = await db.all(allMoviesListQuery)
+  response.send(allMoviesList)
+})
+
+//Create New Movie Table API (API 2)
+app.post('/movies/', async (request, response) => {
+  const movieDetails = request.body
+  const {directorId, movieName, leadActor} = movieDetails
+  const createMovieQuery = `
+  INSERT INTO movie(director_id, movie_name, lead_actor)
+  VALUES (
+    '${directorId}',
+    '${movieName}',
+    '${leadActor}'
+  )`
+  await db.run(createMovieQuery)
+  response.send('Movie Successfully Added')
+})
+
+//GET Movie list based on the Movie Id API(API 3)
+app.get('/movies/:movieId/', async (request, response) => {
+  const {movieId} = request.params
+  const getMovieQuery = `
+  SELECT 
+  * 
+  FROM movie
+  WHERE movie_id = ${movieId}`
+  const movie = await db.get(getMovieQuery)
+  response.send(movie)
+})
+
+//Update details in movie table based on Movie Id API (API 4)
+app.put('/movies/:movieId/', async (request, response) => {
+  const {movieId} = request.params
+  const movieDetails = request.body
+  const {directorId, movieName, leadActor} = movieDetails
+  const updateMovieQuery = `
+  UPDATE movie
+  SET director_id = '${directorId}', movie_name = '${movieName}', lead_actor = '${leadActor}'
+  WHERE movie_id = ${movieId}`
+  await db.run(updateMovieQuery)
+  response.send('Movie Details Updated')
+})
+
+//Delete Movie table based on the Movie ID API(API 5)
+app.delete('/movies/:movieId/', async (request, response) => {
+  const {movieId} = request.params
+  const deleteQuery = `
+  DELETE FROM movie
+  WHERE movie_id = ${movieId}`
+  await db.run(deleteQuery)
+  response.send('Movie Removed')
+})
+
+const convertIntoDbObjectDirector = dbObject => {
+  return {
+    director_id: dbObject.director_id,
+    director_name: dbObject.director_name,
+  }
+}
+
+//GET All director list API (API 6)
+app.get('/directors/', async (request, response) => {
+  const allDirectorListQuery = `
+    SELECT 
+    *
+    FROM 
+    director`
+  const allDirectorsList = await db.all(allDirectorListQuery)
+  response.send(allDirectorsList)
+})
+
+//GET all movie names directed by a specific director
+
+const convertDbObjectToResponseObject = dbObject => {
+  console.log(dbObject.movie_name)
+  return [
+    {
+      movieId: dbObject.movie_name,
+    },
+  ]
+}
+
+app.get('/directors/:directorId/movies/', async (request, response) => {
+  const {directorId} = request.params
+  const movieListQuery = `
+  SELECT
+  movie_name
+  FROM
+  movie
+  WHERE director_id = ${directorId}`
+  const movieList = await db.all(movieListQuery)
+  console.log(movieList)
+  response.send(
+    movieList.map(eachItem => {
+      convertDbObjectToResponseObject(eachItem)
+    }),
+  )
+})
+
+module.exports = app
