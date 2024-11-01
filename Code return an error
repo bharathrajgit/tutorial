@@ -20,6 +20,7 @@ const initilizeDbAndServer = async () => {
     })
   } catch (error) {
     console.log(`Error ${error.message}`)
+    process.exit(1)
   }
 }
 
@@ -35,7 +36,7 @@ const hasPriorityPropertie = requestQuery => {
   return requestQuery.priority !== undefined
 }
 
-const hasStatusProperties = requestQuery => {
+const hasStatusProperty = requestQuery => {
   return requestQuery.status !== undefined
 }
 
@@ -64,7 +65,7 @@ app.get('/todos/', async (request, response) => {
       WHERE todo LIKE '%${search_q}%'
       AND priority = '${priority}'`
       break
-    case hasStatusProperties(request.query):
+    case hasStatusProperty(request.query):
       getTodoQuery = `
       SELECT 
       *
@@ -124,7 +125,7 @@ app.put('/todos/:todoId/', async (request, response) => {
     case hasPriorityPropertie(request.body):
       getTodoUpdateQuery = `
       UPDATE todo
-      SET priority = '${updateTodo.body}'
+      SET priority = '${updateTodo.priority}'
       WHERE id = ${todoId}`
       message = 'Priority Updated'
       break
